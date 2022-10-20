@@ -1,4 +1,5 @@
-// The default Set doesn't define normal set operations... javascript... wut
+// Did you know that they forgot to add normal set operations when they made
+// Set in javascript?
 export default class SaneSet extends Set {
     constructor(...args) {
         super(...args);
