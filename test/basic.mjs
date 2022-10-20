@@ -1,21 +1,7 @@
 import t from "tap";
 
-import { all, iter, range, zip, Empty } from "../src/new_impl.mjs";
-
-t.test("first()", { autoend: true }, t => {
-    t.test("actually takes the first value", t => {
-        t.strictSame(
-            1,
-            iter([1, 2, 3]).first(),
-            "1 === iter([1, 2, 3]).first()"
-        );
-        t.end();
-    });
-
-    t.test("throws Empty when iter is empty", { autoend: true }, t => {
-        t.throws(() => iter([]).first(), new Empty());
-    });
-});
+import { iter } from "../src/index.mjs";
+import { all, range, repeat, zip, Empty } from "../src/new_impl.mjs";
 
 t.test("avg()", { autoend: true }, t => {
     t.test("correct math", { autoend: true }, t => {
@@ -44,6 +30,22 @@ t.test("avg()", { autoend: true }, t => {
 
     t.test("throws Empty when iterator is empty", { autoend: true }, t => {
         t.throws(() => iter([]).avg(), new Empty());
+    });
+
+    t.test("avg_or() returns the given value on Empty", { autoend: true }, t => {
+        t.strictSame(
+            5,
+            iter([]).avg_or(5),
+        );
+    });
+
+    t.test("avg_or() doesn't return the given value when non-empty", t => {
+        t.notStrictSame(
+            -100,
+            iter([50, 50]).avg_or(-100),
+            "-100 !== iter([50, 50]).avg_or(-100)",
+        );
+        t.end();
     });
 });
 
@@ -117,3 +119,14 @@ t.test("all()", { autoend: true }, t => {
         );
     });
 });
+
+
+t.test("chain()", { autoend: true }, t => {
+    t.test("yep", { autoend: true }, t => {
+        t.strictSame(
+            [1, 1, 1, 2, 2, 2],
+            repeat(1, 3).chain(repeat(2, 3)).collect_array(),
+        );
+    });
+});
+

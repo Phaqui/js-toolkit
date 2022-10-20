@@ -1,6 +1,6 @@
 // Did you know that they forgot to add normal set operations when they made
 // Set in javascript?
-export default class SaneSet extends Set {
+export class SaneSet extends Set {
     constructor(...args) {
         super(...args);
     }
@@ -26,13 +26,13 @@ export default class SaneSet extends Set {
     }
 
     union(...others) {
-        const alleskalmed = new SaneSet(this);
-        for (const ss of others) {
+        const everything = new SaneSet(this);
+        for (const other of others) {
             for (const elem of other) {
-                alleskalmed.add(elem);
+                everything.add(elem);
             }
         }
-        return alleskalmed;
+        return everything;
     }
 
     is_disjoint(...others) {
