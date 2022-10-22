@@ -1,5 +1,5 @@
 import t from "tap";
-import { primes } from "../src/primes.mjs";
+import { primes } from "../src/index.mjs";
 
 const known_first_primes = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
@@ -7,11 +7,11 @@ const known_first_primes = [
 ];
 
 t.test("primes()", { autoend: true }, t => {
-    t.test("correct", { autoend: true }, t => {
+    t.test("correct primes", { autoend: true }, t => {
         t.strictSame(
             known_first_primes,
             primes().take(known_first_primes.length).collect_array(),
-            "bleh"
+            `first ${known_first_primes.length} generated primes are correct`,
         );
     });
 });

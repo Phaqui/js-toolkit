@@ -1,64 +1,48 @@
 import t from "tap";
 
+// XXX: My assumtion so far:
+// this is an export that is not re-exported in index.mjs,
+// thus not making it part of the public interface of this library
+import { _iter } from "../src/iter.mjs";
+
 import { iter } from "../src/index.mjs";
-import { all, range, repeat, zip, Empty } from "../src/new_impl.mjs";
 
-t.test("avg()", { autoend: true }, t => {
-    t.test("correct math", { autoend: true }, t => {
-        t.strictSame(
-            6,
-            iter([6]).avg(),
-            "6 === iter([6]).avg()",
+t.test("(internal) _iter() function", { autoend: true }, t => {
+    t.test("if given iterator returns it right back untouched", t => {
+        const it = ([1, 2])[Symbol.iterator]();
+        t.ok(
+            it === _iter(it),
+            "it === _iter(it)  (given it = ([1, 2])[Symbol.iterator]())"
         );
 
-        t.strictSame(
-            6,
-            iter([3, 9]).avg(),
-            "6 === iter([3, 9]).avg()",
-        );
-    });
+        const first = _iter(it).next().value;
+        const second = _iter(it).next().value;
+        const done = _iter(it).next().done;
 
-    t.test("ignores all values that are strictly not numbers", t => {
-        t.strictSame(
-            2,
-            iter([1, 3, undefined, null, true, false, [], [1], [1, 2], {}, {a:1}])
-                .avg(),
-            "2 === iter([1, 3, undefined, null, true, false, [], [1], [1, 2], {}, {a:1}]).avg()",
+        t.ok(
+            first === 1 && second === 2 && done,
+            "iterating _iter(it) yielded 1, then 2, then it was done"
         );
+
+        t.ok(
+            it.next().done,
+            "\"original\" (`it`) iterator was also exhausted",
+        );
+
         t.end();
     });
 
-    t.test("throws Empty when iterator is empty", { autoend: true }, t => {
-        t.throws(() => iter([]).avg(), new Empty());
-    });
-
-    t.test("avg_or() returns the given value on Empty", { autoend: true }, t => {
-        t.strictSame(
-            5,
-            iter([]).avg_or(5),
-        );
-    });
-
-    t.test("avg_or() doesn't return the given value when non-empty", t => {
-        t.notStrictSame(
-            -100,
-            iter([50, 50]).avg_or(-100),
-            "-100 !== iter([50, 50]).avg_or(-100)",
-        );
-        t.end();
+    t.test("throws TypeError when given non-iterable", { autoend: true }, t => {
+        const msg = type => `iter(): ${type} is not iterable`;
+        t.throws(() => iter(), new TypeError(msg("undefined")));
+        t.throws(() => iter(undefined), new TypeError(msg("undefined")));
+        t.throws(() => iter(null), new TypeError(msg("null")));
+        t.throws(() => iter(true), new TypeError(msg("boolean")));
+        t.throws(() => iter(false), new TypeError(msg("boolean")));
     });
 });
 
-t.test("repeat()", { autoend: true }, t => {
-    t.test("endless repeater (when no second arg, e.g. repeat(5))", t => {
-        t.test("actually never stops repeating", t => {
-            t.pass("literally impossible to actually test :)");
-            t.end();
-        });
-        t.end();
-    });
-});
-
+/*
 t.test("zip()", { autoend: true }, t => {
     t.test("standalone zip()", { autoend: true }, t => {
         t.test("basic", { autoend: true }, t => {
@@ -130,3 +114,4 @@ t.test("chain()", { autoend: true }, t => {
     });
 });
 
+*/

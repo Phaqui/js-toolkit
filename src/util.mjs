@@ -8,18 +8,6 @@ export class Empty extends Error {
     }
 }
 
-export function average(xs) {
-    let n = 0, sum = 0;
-    for (const curr of xs) {
-        const number = _num(curr);
-        if (Number.isNaN(number)) continue;
-        sum += number;
-        n++;
-    }
-    if (n === 0) throw new Empty();
-    return sum / n;
-}
-
 export function _num(obj) {
     if (Array.isArray(obj)) {
         // did you know Number([]) === 0 in js?
@@ -39,3 +27,16 @@ export function _num(obj) {
     return Number(obj);
 }
 
+// run  fn(...args) and return its result.
+// if Empty is thrown, return value instead.
+export function _catch_empty(fn, value, ...args) {
+    try {
+        return fn(...args);
+    } catch (e) {
+        if (e instanceof Empty) {
+            return value;
+        } else {
+            throw e;
+        }
+    }
+}

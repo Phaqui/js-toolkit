@@ -1,10 +1,10 @@
 import t from "tap";
 
-import { fibonacci } from "../src/fibonacci.mjs";
+import { fibonacci } from "../src/index.mjs";
 
-t.test("basic", { autoend: true }, t => {
+t.test("Fibonacci works", { autoend: true }, t => {
     t.strictSame(
-        [0, 1, 1, 2, 3, 5, 8, 13, 21],
-        fibonacci().take(9).collect_array()
+        [0, 1, 1, 2, 3, 5, 8, 13, 21, 34],
+        fibonacci().take(10).collect_array()
     );
 });

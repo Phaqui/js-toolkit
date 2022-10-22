@@ -1,7 +1,7 @@
 import t from "tap";
-import { iter, last, Empty } from "../src/new_impl.mjs";
+import { iter, last, Empty } from "../src/index.mjs";
 
-t.test("iter.last()", { autoend: true }, t => {
+t.test("Iter.last()", { autoend: true }, t => {
     t.test("returns the last item", { autoend: true }, t => {
         t.strictSame(
             1,
@@ -20,6 +20,31 @@ t.test("iter.last()", { autoend: true }, t => {
             () => iter([]).last(), new Empty(),
             "iter([]).last() throws Empty"
         );
+    });
+
+});
+
+t.test("Iter.last_or()", { autoend: true }, t => {
+    t.test("when given non-empty iterable", { autoend: true }, t => {
+        t.test("returns last item from iterable (not the or-value)", t => {
+            t.strictSame(
+                3,
+                iter([1, 2, 3]).last_or(-1),
+                "3 === iter([1, 2, 3]).last_or(-1)",
+            );
+            t.end();
+        });
+
+    });
+
+    t.test("when given empty iterable", { autoend: true }, t => {
+        t.test("returns the or-value", { autoend: true }, t => {
+            t.strictSame(
+                -1,
+                iter([]).last_or(-1),
+                "-1 === iter([]).last_or(-1)",
+            );
+        });
     });
 });
 

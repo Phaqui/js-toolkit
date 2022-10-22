@@ -1,16 +1,16 @@
 import { _iter } from "./iter.mjs";
-import { truthy, Empty } from "./util.mjs";
+import { truthy, Empty, _catch_empty, _num } from "./util.mjs";
 
-export function any(iterable, pred = truthy) {
-    const it = _iter(iterable);
+export function any(obj, pred = truthy) {
+    const it = _iter(obj);
     for (const val of it) {
         if (pred(val)) return true;
     }
     return false;
 }
 
-export function all(iterable, pred = truthy) {
-    const it = _iter(iterable);
+export function all(obj, pred = truthy) {
+    const it = _iter(obj);
     for (const val of it) {
         if (!pred(val)) return false;
     }
@@ -23,22 +23,31 @@ export function first(obj) {
         return obj[0];
     }
 
-    const it = _iter(obj);
-    const next = it.next();
-    if (next.done) throw new Empty();
-    return next.value;
+    return _first(_iter(obj));
 }
 
 export function last(obj) {
-    // if given an actual array, there's no need to grab an iterator of it,
-    // iterate through the end, then return the last item, we have random access.
     if (Array.isArray(obj)) {
         if (obj.length === 0) throw new Empty();
         return obj[obj.length - 1];
     }
 
+    return _last(_iter(obj));
+}
+
+export const first_or = (obj, value) => _catch_empty(_first, value, obj);
+export const last_or = (obj, value) => _catch_empty(_last, value, obj);
+export const average_or = (obj, value) => _catch_empty(average, value, obj);
+export const sum_or = (obj, value) => _catch_empty(sum, value, obj);
+
+export function _first(it) {
+    const next = it.next();
+    if (next.done) throw new Empty();
+    return next.value;
+}
+
+export function _last(it) {
     let value;
-    const it = _iter(obj);
     let it_res = it.next();
     if (it_res.done) throw new Empty();
     while (!it_res.done) {
@@ -66,6 +75,19 @@ export function reduce(obj, fn, start_value, XXX) {
     return result;
 }
 
+export function average(obj) {
+    const it = _iter(obj);
+    let n = 0, sum = 0;
+    for (const curr of it) {
+        const number = _num(curr);
+        if (Number.isNaN(number)) continue;
+        sum += number;
+        n++;
+    }
+    if (n === 0) throw new Empty();
+    return sum / n;
+}
+
 export function sum(obj) {
     let it = _iter(obj);
     let result = 0;
@@ -78,7 +100,3 @@ export function sum(obj) {
     return result;
 }
 
-import { _catch_Empty } from "./iter.mjs";
-export function sum_or(obj, value) {
-    return _catch_Empty(sum, value, obj);
-}

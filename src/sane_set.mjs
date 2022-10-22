@@ -1,41 +1,44 @@
 // Did you know that they forgot to add normal set operations when they made
 // Set in javascript?
 export class SaneSet extends Set {
-    constructor(...args) {
-        super(...args);
-    }
-
+    constructor(...args) { super(...args); }
     is_empty() { return this.size === 0; }
+    difference(other) { return difference(this, other); }
+    intersection(other) { return intersection(this, other); }
+    union(...others) { return union(this, ...others); }
+    is_disjoint(...others) { return is_disjoint(this, ...others); }
+}
 
-    difference(other) {
-        const diff = new SaneSet(this);
-        for (const elem of other) {
-            diff.delete(elem);
-        }
-        return diff;
+export function difference(a, b) {
+    const diff = new SaneSet(a);
+    for (const elem of b) {
+        diff.delete(elem);
     }
+    return diff;
+}
 
-    intersection(other) {
-        const only_samesies = new SaneSet();
-        for (const elem of other) {
-            if (this.has(elem)) {
-                only_samesies.add(elem);
-            }
-        }
-        return only_samesies;
-    }
-
-    union(...others) {
-        const everything = new SaneSet(this);
+export function intersection(a, ...others) {
+    const only_samesies = new SaneSet();
+    outer: for (const elem of a) {
         for (const other of others) {
-            for (const elem of other) {
-                everything.add(elem);
-            }
+            if (!other.has(elem)) continue outer;
         }
-        return everything;
-    }
 
-    is_disjoint(...others) {
-        // ...
+        only_samesies.add(elem);
     }
+    return only_samesies;
+}
+
+export function union(a, ...others) {
+    const everything = new SaneSet(a);
+    for (const other of others) {
+        for (const elem of other) {
+            everything.add(elem);
+        }
+    }
+    return everything;
+}
+
+export function is_disjoint(a, ...others) {
+    return intersection(a, ...others).is_empty();
 }
