@@ -8,6 +8,8 @@ export class Empty extends Error {
     }
 }
 
+export const _default = Symbol("_default");
+
 export function _num(obj) {
     if (Array.isArray(obj)) {
         // did you know Number([]) === 0 in js?

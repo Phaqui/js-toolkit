@@ -1,6 +1,7 @@
-export { iter } from "./iter.mjs";
+export { iter, _else } from "./iter.mjs";
 
 export {
+    count,
     fibonacci,
     primes,
     range,
@@ -12,6 +13,7 @@ export {
     first,
     last,
     sum,
+    join,
 } from "./finishers.mjs";
 
 export { Empty } from "./util.mjs";

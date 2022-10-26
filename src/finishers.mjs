@@ -17,6 +17,18 @@ export function all(obj, pred = truthy) {
     return true;
 }
 
+export function count(obj) {
+    if (Array.isArray(obj)) return obj.length;
+    if (obj instanceof Set) return obj.size;
+    const n = 0, it = _iter(obj);
+    for (const _ of it) n++;
+    return n;
+}
+
+export function join(obj, str = "") {
+    return [..._iter(obj)].join(str);
+}
+
 export function first(obj) {
     if (Array.isArray(obj)) {
         if (obj.length === 0) throw new Empty();

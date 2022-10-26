@@ -1,5 +1,6 @@
 import { iter, _iter } from "./iter.mjs";
 
+export const count = (start = 0, step = 1) => iter(_count(start, step));
 export const range = (...args) => iter(_range(...args));
 export const fibonacci = () => iter(_fibonacci());
 export const enumerate = (obj) => iter(_enumerate(obj));
@@ -8,6 +9,10 @@ export const chain = (...iters) => iter(_chain(...iters));
 export const primes = () => iter(_primes());
 export const intersperse = (it, val) => iter(_intersperse(it, val));
 export const zip = (...iters) => iter(_zip(...iters));
+
+export function *_count(start = 0, step = 1) {
+    for (;; start += step) yield start;
+}
 
 function *_range(...args) {
     let start = 0, stop = null, step = 1;
