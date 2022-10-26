@@ -7,7 +7,7 @@ export const enumerate = (obj) => iter(_enumerate(obj));
 export const repeat = (val, n = null) => iter(_repeat(val, n));
 export const chain = (...iters) => iter(_chain(...iters));
 export const primes = () => iter(_primes());
-export const intersperse = (it, val) => iter(_intersperse(it, val));
+export const intersperse = (obj, val) => iter(_intersperse(obj, val));
 export const zip = (...iters) => iter(_zip(...iters));
 
 export function *_count(start = 0, step = 1) {
@@ -82,23 +82,22 @@ export function *_zip(...iterables) {
     }
 }
 
-// TODO NOT IMPLEMENTED
-function *_intersperse(iterable, value) {
-    const it = _iter(iterable);
-    let next = it.next();
+export function *_intersperse(obj, value) {
+    const it = _iter(obj);
+    let a = it.next();
+    let b = it.next();
+    if (a.done) return;
+    yield a.value;
+    if (b.done) return;
+    yield value;
+    yield b.value;
     while (true) {
-        if (next.done) break;
-        yield next.value;
-        yield 
-
-    }
-    for (const val of iterable) {
-        yield val;
+        a = it.next();
+        if (a.done) break;
         yield value;
+        yield a.value;
     }
 }
-
-
 
 
 

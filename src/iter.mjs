@@ -1,6 +1,7 @@
 import { truthy, Empty, _catch_empty, _num } from "./util.mjs";
 import {
-    zip
+    zip,
+    _intersperse,
 } from "./producers.mjs";
 import {
     average,
@@ -20,13 +21,6 @@ import {
     _take,
     _filter
 } from "./processors.mjs";
-
-// TEMP
-function *__map(fn, iterable) {
-    for (const val of iterable) {
-        yield fn(val);
-    }
-}
 
 export function iter(obj) {
     return new Iter(obj);
@@ -120,66 +114,51 @@ class Group {
                 for (const [match_arm, match_group] of this.groups) {
                     if (match_group.finisher) {
                         const final_result = match_group.finish();
-                        yield [match_arm, final_result];
+                        if (match_arm === _else) {
+                            yield ["__default", final_result];
+                        } else {
+                            yield [match_arm, final_result];
+                        }
                     }
                 }
                 break;
             } else {
                 const next_value_from_above = next_from_above.value;
                 const match_arm = this.discriminator_fn(next_value_from_above);
-
-                if (this.groups.has(match_arm)) {
-                    const match_group = this.groups.get(match_arm);
-                    match_group.initial_generator.feed(next_value_from_above);
-
-                    const next_result_from_match_arm = match_group.iter.next();
-
-                    if (match_group.finisher) {
-                        // we must gather up all the values we've seen so far
-                        match_group.push_value(next_result_from_match_arm.value);
+                let match_group = this.groups.get(match_arm);
+                if (match_group === undefined) {
+                    match_group = this.groups.get(_else);
+                    if (match_group === undefined) {
+                        // match arm not set, and no else group, what do we do?
+                    } else {
+                        // no matching arm for the value, but we have an _else
+                        // group, so it will be used as usual, below.
                     }
                 }
-            }
-        }
 
-        /*
-        for (const x of it) {
-            const group = this.discriminator_fn(x);
-            if (this.groups.has(group)) {
-                const match_group = this.groups.get(group);
-                match_group.initial_generator.feed(x);
-                //const res = match_group.iter.next();
-                //console.log(res);
+                match_group.initial_generator.feed(next_value_from_above);
+                const next_result_from_match_arm = match_group.iter.next();
 
-                //const res = __map(({ value }) => value, gen);
                 if (match_group.finisher) {
-                    const final_value = match_group.iter.call();
-                    console.log("final_value:", final_value);
-                    // wait until "input" stream has finished before yielding
-                } else {
-                    yield first_value.value;
+                    match_group.push_value(next_result_from_match_arm.value);
                 }
-            } else {
-                // TODO check _else group...
-                // don't do anything, argument not "captured"
             }
         }
-        */
+
     }
 
     map(fn) {
         if (this.current_group === undefined) {
             throw Error("Not in match arm");
         }
-        let group = this.groups.get(this.current_group);
-        group.iter = __map(fn, group.iter);
-        //local_group.add_processor(__map.bind(null, fn));
+        const match_group = this.groups.get(this.current_group);
+        match_group.iter = _map(match_group.iter, fn);
         return this;
     }
 
     sum() {
-        let group = this.groups.get(this.current_group);
-        group.finisher = sum;
+        let match_group = this.groups.get(this.current_group);
+        match_group.finisher = sum;
         return this;
     }
 
@@ -188,6 +167,7 @@ class Group {
         const initial_generator = make_iterator();
         const match_group = new MatchGroup(arg, initial_generator);
         this.groups.set(this.current_group, match_group);
+        console.log(this.groups);
         return this;
     }
 
@@ -196,16 +176,14 @@ class Group {
     // the results
     gather() {
         if (this.current_group === __not_set) {
-            //throw new Error("No match arms given");
+            throw new Error("No match arms given");
         }
-        //this.iter_object.__start_groups(this);
         return this.iter_object;
     }
 }
 
 function make_iterator() {
     let done = false;
-    let i = 5;
     const q = [];
     return {
         complete() { done = true; },
@@ -235,36 +213,7 @@ class MatchGroup {
     finish() {
         return this.finisher(this.#values);
     }
-    /*
-    feed_generator(value) {
-        this.initial_generator.feed(value);
-    }
-    add_processor(fn, ...args) {
-        this.chain.push({ type: "processor", fn, args });
-    }
-    add_finisher(method, ...args) {
-        if (this.finisher) {
-            throw new Error(`Match arm for ${this.match_val} already has a finsher`);
-        }
-        this.finisher = { method, args };
-    }
-    */
 }
-
-/*
-function collect_mapping(it, cls) {
-    let first = it.next();
-    if (first.done) return new cls();
-    if (Array.isArray(first.value)) {
-        let 
-    } else if (is_pojo(first.value)) {
-
-    }
-    if (first.value)
-    if (cls === Map) { return new Map(it); }
-    if (it === Object) { return Object.fromEntries(it); }
-}
-*/
 
 export function _iter(obj) {
     if (typeof obj === "undefined") {
