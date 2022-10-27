@@ -4,6 +4,7 @@ import {
     _intersperse,
 } from "./producers.mjs";
 import {
+    all,
     average,
     average_or,
     first,
@@ -47,9 +48,6 @@ class Iter {
         this.#iter = g[Symbol.iterator](this.#iter);
         return g
     }
-    __start_groups(groups) {
-        this.#iter = groups.__iter(this.#iter);
-    }
     takewhile(pred) { this.#iter = _takewhile(this.#iter, pred); return this; }
     takeuntil(pred) { this.#iter = _takeuntil(this.#iter, pred); return this; }
     chain(iterable) { this.#iter = chain(this.#iter, iterable); return this; }
@@ -58,16 +56,16 @@ class Iter {
 
     all(pred = truthy) { return all(this.#iter, pred); }
     any(pred = truthy) { return any(this.#iter, pred); }
-    first() { return first(this.#iter); }
-    first_or(value) { return first_or(this.#iter); }
-    last() { return last(this.#iter); }
-    last_or(value) { return last_or(this.#iter, value); }
-    join(str) { return join(this.#iter, str); }
-    reduce(fn, start_value) { return reduce(this.#iter, fn, start_value); }
     average() { return average(this.#iter); }
     avg() { return average(this.#iter); }
     average_or(value) { return average_or(this.#iter, value); }
     avg_or(value) { return average_or(this.#iter, value); }
+    first() { return first(this.#iter); }
+    first_or(value) { return first_or(this.#iter, value); }
+    last() { return last(this.#iter); }
+    last_or(value) { return last_or(this.#iter, value); }
+    join(str) { return join(this.#iter, str); }
+    reduce(fn, start_value) { return reduce(this.#iter, fn, start_value); }
     sum() { return sum(this); }
     sum_or(value) { return sum_or(this, value); }
 
@@ -138,34 +136,25 @@ class Group {
 
                 match_group.initial_generator.feed(next_value_from_above);
                 const next_result_from_match_arm = match_group.iter.next();
-
-                if (match_group.finisher) {
-                    match_group.push_value(next_result_from_match_arm.value);
+                if (next_result_from_match_arm.done) {
+                    // don't do anything -- or potentially call the finisher?
+                } else {
+                    if (match_group.finisher) {
+                        match_group.push_value(next_result_from_match_arm.value);
+                    } else {
+                        yield [match_group.match_val, next_result_from_match_arm.value];
+                    }
                 }
             }
         }
 
     }
 
-    map(fn) {
-        if (this.current_group === undefined) {
-            throw Error("Not in match arm");
-        }
-        const match_group = this.groups.get(this.current_group);
-        match_group.iter = _map(match_group.iter, fn);
-        return this;
-    }
-
-    sum() {
-        let match_group = this.groups.get(this.current_group);
-        match_group.finisher = sum;
-        return this;
-    }
-
-    match(arg) {
-        this.current_group = arg;
+    // Set up a match arm for some value
+    match(value) {
+        this.current_group = value;
         const initial_generator = make_iterator();
-        const match_group = new MatchGroup(arg, initial_generator);
+        const match_group = new MatchGroup(value, initial_generator);
         this.groups.set(this.current_group, match_group);
         console.log(this.groups);
         return this;
@@ -180,6 +169,62 @@ class Group {
         }
         return this.iter_object;
     }
+
+    #get_current_match_group() {
+        if (this.current_group === __not_set) throw Error("not in match arm");
+        return this.groups.get(this.current_group);
+    }
+
+    #wrap_current_matchgroup_iter(fn, ...args) {
+        if (this.current_group === __not_set) throw Error("not in match arm");
+        const mg = this.groups.get(this.current_group);
+        mg.iter = fn(mg.iter, ...args);
+        return this;
+    }
+
+    // Sets the finisher of the current match arm
+    #set_finisher(fn) {
+        if (this.current_group === __not_set) throw Error("not in match arm");
+        const mg = this.groups.get(this.current_group);
+        mg.finisher = fn;
+        return this;
+    }
+
+
+    filter(fn) { return this.#wrap_current_matchgroup_iter(_filter, fn); }
+    map(fn) { return this.#wrap_current_matchgroup_iter(_map, fn); }
+    chain(iterable) { return this.#wrap_current_matchgroup_iter(chain, iterable); }
+    take(n) { return this.#wrap_current_matchgroup_iter(_take, n); }
+    takewhile(pred) { return this.#wrap_current_matchgroup_iter(_takewhile, pred);}
+    takeuntil(pred) { return this.#wrap_current_matchgroup_iter(_takeuntil, pred);}
+    intersperse(value) {
+        return this.#wrap_current_matchgroup_iter(_intersperse, value);
+    }
+    zip(...iterables) {
+        return this.#wrap_current_matchgroup_iter(zip, ...iterables);
+    }
+
+    all(pred = truthy) { return this.#set_finisher(it => all(it, pred)); }
+    any(pred = truthy) { return this.#set_finisher(it => any(it, pred)); }
+    first() { return this.#set_finisher(first); }
+    first_or(value) { return this.#set_finisher(it => first_or(it, value)); }
+    last() { return this.#set_finisher(last); }
+    last_or(value) { return this.#set_finisher(it => last_or(it, value)); }
+    join(str) { return this.#set_finisher(it => join(it, str)); }
+    reduce(fn, start_value) {
+        return this.#set_finisher(it => reduce(it, fn, start_value));
+    }
+    average() { return this.#set_finisher(average); }
+    avg() { return this.#set_finisher(average); }
+    average_or(value) { return this.#set_finisher(it => average_or(it, value)); }
+    avg_or(value) { return this.#set_finisher(it => average_or(it, value)); }
+    sum() { return this.#set_finisher(sum); }
+    sum_or(value) { return this.#set_finisher(it => sum_or(it, value)); }
+
+    collect_array() { return this.#set_finisher(it => Array.from(it)); }
+    collect_map() { return this.#set_finisher(it => new Map(it)); }
+    collect_set() { return this.#set_finisher(it => new Set(it)); }
+    collect_into(cls) { return this.#set_finisher(it => new cls(it)); }
 }
 
 function make_iterator() {
