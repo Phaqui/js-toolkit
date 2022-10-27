@@ -2,13 +2,31 @@
 
 My own collection of helpful and interesting javascript things.
 
+# SCRATCH
+
+This project is just a *scratch*. It is nowhere near even an _alpha_ state. For demonstration purposes only.
+
 # examples
 
 ```javascript
 import { iter } from "somewhere";
 
 iter([1, 2, 3, 4]).sum() === 10
+
+iter({ A: 1, B: 2, C: 3 }).map(([k, v]) => [k + k, v * v]).collect_object() === { AA: 1, BB: 4, CC: 9 }
 ```
+
+## Producers (starting points of iteration):
+
+count, range, fibonacci, enumerate, repeat, chain, primes, intersperse, zip.
+
+## Processors (iterators that take an iterator, and processes it in some way)
+
+filter, map, take, takewhile, takeuntil, skip, group
+
+## Finishers (consumes an iterator to produce a single result
+
+any, all, count, join, first, last, reduce, average, sum
 
 ## group()
 
