@@ -94,6 +94,7 @@ class Iter {
 }
 
 export const _else = Symbol("_else");
+const __items = Symbol("__items");
 
 const __not_set = Symbol();
 class Group {
@@ -136,18 +137,22 @@ class Group {
 
                 match_group.initial_generator.feed(next_value_from_above);
                 const next_result_from_match_arm = match_group.iter.next();
+                const items = next_result_from_match_arm.value[__items];
                 if (next_result_from_match_arm.done) {
                     // don't do anything -- or potentially call the finisher?
                 } else {
                     if (match_group.finisher) {
-                        match_group.push_value(next_result_from_match_arm.value);
+                        for (const item of items) {
+                            match_group.push_value(item);
+                        }
                     } else {
-                        yield [match_group.match_val, next_result_from_match_arm.value];
+                        for (const item of items) {
+                            yield [match_group.match_val, item];
+                        }
                     }
                 }
             }
         }
-
     }
 
     // Set up a match arm for some value
@@ -156,7 +161,6 @@ class Group {
         const initial_generator = make_iterator();
         const match_group = new MatchGroup(value, initial_generator);
         this.groups.set(this.current_group, match_group);
-        console.log(this.groups);
         return this;
     }
 
@@ -191,14 +195,14 @@ class Group {
     }
 
 
-    filter(fn) { return this.#wrap_current_matchgroup_iter(_filter, fn); }
+    filter(fn) { return this.#wrap_current_matchgroup_iter(__filter, fn); }
     map(fn) { return this.#wrap_current_matchgroup_iter(_map, fn); }
     chain(iterable) { return this.#wrap_current_matchgroup_iter(chain, iterable); }
     take(n) { return this.#wrap_current_matchgroup_iter(_take, n); }
     takewhile(pred) { return this.#wrap_current_matchgroup_iter(_takewhile, pred);}
     takeuntil(pred) { return this.#wrap_current_matchgroup_iter(_takeuntil, pred);}
     intersperse(value) {
-        return this.#wrap_current_matchgroup_iter(_intersperse, value);
+        return this.#wrap_current_matchgroup_iter(__intersperse, value);
     }
     zip(...iterables) {
         return this.#wrap_current_matchgroup_iter(zip, ...iterables);
@@ -241,6 +245,49 @@ function make_iterator() {
             q.push(value);
         }
     };
+}
+
+function *__filter(it, fn) {
+    while (true) {
+        let { done, value } = it.next();
+        value = items_of(value);
+        if (done) return;
+        const keep = fn(value);
+        const items = keep ? [value] : [];
+        const result = { [__items]: items };
+        yield result;
+    }
+}
+
+function items_of(obj) {
+    if (obj[__items]) {
+        console.log("extracting...");
+        const res = obj[__items];
+        return res;
+    } else {
+        console.log("clean:", obj);
+        return obj;
+    }
+}
+
+function *__intersperse(it, value) {
+    let first, rest;
+    while (true) {
+        let a = it.next();
+        if (a.done) return;
+        [first, ...rest] = items_of(a.value);
+        if (first !== undefined) break;
+    }
+
+    yield { [__items]: [first] };
+    let b = it.next();
+    if (b.done) return;
+    yield { [__items]: [value, b.value] };
+    while (true) {
+        a = it.next();
+        if (a.done) break;
+        yield { [__items]: [value, a.value] };
+    }
 }
 
 class MatchGroup {

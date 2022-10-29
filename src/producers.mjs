@@ -85,9 +85,9 @@ export function *_zip(...iterables) {
 export function *_intersperse(obj, value) {
     const it = _iter(obj);
     let a = it.next();
-    let b = it.next();
     if (a.done) return;
     yield a.value;
+    let b = it.next();
     if (b.done) return;
     yield value;
     yield b.value;
