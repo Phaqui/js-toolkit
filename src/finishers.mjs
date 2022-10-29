@@ -1,5 +1,5 @@
 import { _iter } from "./iter.mjs";
-import { truthy, Empty, _catch_empty, _num } from "./util.mjs";
+import { truthy, Empty, _catch_empty, _num, __none } from "./util.mjs";
 
 export function any(obj, pred = truthy) {
     const it = _iter(obj);
@@ -51,14 +51,18 @@ export const first_or = (obj, value) => _catch_empty(_first, value, obj);
 export const last_or = (obj, value) => _catch_empty(_last, value, obj);
 export const average_or = (obj, value) => _catch_empty(average, value, obj);
 export const sum_or = (obj, value) => _catch_empty(sum, value, obj);
+export const reduce_or = (obj, value, fn, initial_value = __none) =>
+    _catch_empty(reduce, value, obj, fn, initial_value);
 
-export function _first(it) {
+export function _first(obj) {
+    const it = _iter(obj);
     const next = it.next();
     if (next.done) throw new Empty();
     return next.value;
 }
 
-export function _last(it) {
+export function _last(obj) {
+    const it = _iter(obj);
     let value;
     let it_res = it.next();
     if (it_res.done) throw new Empty();
@@ -69,22 +73,37 @@ export function _last(it) {
     return value;
 }
 
-export function reduce(obj, fn, start_value, XXX) {
-    let it = _iter(obj);
+export function reduce(obj, fn, initial_value = __none) {
+    const it = _iter(obj);
+    let curr, prev, i = 0;
 
-    let result, prev;
-    if (typeof start_value === "undefined") {
-        prev = it.next().value;
+    if (initial_value === __none) {
+        const first = it.next();
+        if (first.done) {
+            throw new Empty();
+        } else {
+            prev = first.value;
+        }
     } else {
-        prev = start_value;
+        prev = initial_value;
     }
 
-    for (const curr of it) {
-        result = fn(prev, curr);
-        prev = result;
+    const next = it.next();
+    if (next.done) {
+        return prev;
+    }
+    curr = next.value;
+    curr = fn(prev, curr, i++);
+
+    while (true) {
+        const next = it.next();
+        if (next.done) break;
+        prev = curr;
+        curr = next.value;
+        curr = fn(prev, curr, i++);
     }
 
-    return result;
+    return curr;
 }
 
 export function average(obj) {

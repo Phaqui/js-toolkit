@@ -1,8 +1,17 @@
-import { truthy, Empty, _catch_empty, _num } from "./util.mjs";
+import {
+    truthy,
+    Empty,
+    _catch_empty,
+    _num,
+    __none,
+    __need_more_values,
+} from "./util.mjs";
+
 import {
     zip,
     _intersperse,
 } from "./producers.mjs";
+
 import {
     all,
     average,
@@ -12,7 +21,7 @@ import {
     last,
     last_or,
     join,
-    reduce,
+    //reduce,
     sum,
     sum_or
 } from "./finishers.mjs";
@@ -23,79 +32,88 @@ import {
     _filter
 } from "./processors.mjs";
 
-export function iter(obj) {
-    return new Iter(obj);
-}
+export const _else = Symbol("_else");
+export const __stop = Symbol("__stop");
+export function iter(obj) { return new Iter(obj); }
 
 class Iter {
-    #iter;
-
     constructor(obj) {
-        this.#iter = _iter(obj);
+        this.it = _iter(obj);
+        this.chain = [];
     }
 
     *[Symbol.iterator]() {
-        for (const val of this.#iter) {
-            yield val;
+        let running = true;
+        all_done: while (running) {
+            let values = [];
+            outer: while (true) {
+                const next = this.it.next();
+                if (next.done) break all_done;
+                values = values.filter(remove_needmorevals);
+                values.push(next.value);
+                for (const fn of this.chain) {
+                    values = values.map(fn).filter(remove_none).flat();
+                    if (values.includes(__stop)) {
+                        running = false;
+                        values = values.filter(x => x !== __stop);
+                        break outer;
+                    }
+                    if (values.includes(__need_more_values)) {
+                        continue outer;
+                    }
+                    if (values.length === 0) break outer;
+                }
+                break outer;
+            }
+            for (const res of values) { yield res; }
         }
     }
 
-    filter(fn) { this.#iter = _filter(this.#iter, fn); return this; }
-    map(fn) { this.#iter = _map(this.#iter, fn); return this; }
-    take(n) { this.#iter = _take(this.#iter, n); return this; }
-    group(fn) {
-        const g = new Group(fn, this);
-        this.#iter = g[Symbol.iterator](this.#iter);
-        return g
-    }
-    takewhile(pred) { this.#iter = _takewhile(this.#iter, pred); return this; }
-    takeuntil(pred) { this.#iter = _takeuntil(this.#iter, pred); return this; }
-    chain(iterable) { this.#iter = chain(this.#iter, iterable); return this; }
-    zip(...iterables) { this.#iter = zip(this.#iter, ...iterables); return this;}
-    intersperse(value) { this.#iter = _intersperse(this.#iter, value); return this; }
+    // processors
+    
+    filter(fn) { this.chain.push(filter.bind(null, fn)); return this; }
+    map(fn) { this.chain.push(map.bind(null, fn)); return this; }
+    intersperse(value) {
+        this.chain.push(_make_intersperse(value)); return this; }
+    pairwise() { this.chain.push(_make_pairwise()); return this; }
+    take(n) { this.chain.push(_make_take(n)); return this; }
+    group(fn) { }
+    takewhile(pred) {}
+    takeuntil(pred) {}
+    chain(iterable) {}
+    zip(...iterables) {}
 
-    all(pred = truthy) { return all(this.#iter, pred); }
-    any(pred = truthy) { return any(this.#iter, pred); }
-    average() { return average(this.#iter); }
-    avg() { return average(this.#iter); }
-    average_or(value) { return average_or(this.#iter, value); }
-    avg_or(value) { return average_or(this.#iter, value); }
-    first() { return first(this.#iter); }
-    first_or(value) { return first_or(this.#iter, value); }
-    last() { return last(this.#iter); }
-    last_or(value) { return last_or(this.#iter, value); }
-    join(str) { return join(this.#iter, str); }
-    reduce(fn, start_value) { return reduce(this.#iter, fn, start_value); }
+
+    // finishers
+
+    all(pred = truthy) { return all(this, pred); }
+    any(pred = truthy) { return any(this, pred); }
+    average() { return average(this); }
+    avg() { return average(this); }
+    average_or(value) { return average_or(this, value); }
+    avg_or(value) { return average_or(this, value); }
+    join(str) { return join(this, str); }
     sum() { return sum(this); }
     sum_or(value) { return sum_or(this, value); }
+    first() { return first(this); }
+    first_or(value) { return first_or(this, value); }
+    last() { return last(this); }
+    last_or(value) { return last_or(this, value); }
+    reduce(fn, initial_value = __none) { return reduce(this, fn, initial_value); }
+    reduce_or(value, fn, initial_value = __none) {
+        return reduce_or(this, value, fn, initial_value);
+    }
 
     collect_array() { return Array.from(this); }
     collect_set() { return new Set(this); }
-    collect_map() { return new Map(this); }
-    //collect_object() { return Object.fromEntries(it); }
-
-    // For use like: range(10).collect_into(SaneSet);
-    // TODO untested
     collect_into(cls) { return new cls(this); }
-
-    collect_object() {
-        const res = {};
-        for (const x of this.#iter) {
-            if (Array.isArray(x)) {
-                res[x[0]] = x[1];
-            } else if (is_pojo(x)) {
-                Object.assign(res, x);
-            } else {
-                res[x] = x;
-            }
-        }
-        return res;
-    }
+    collect_map() { return new Map(to_entries(this)); }
+    collect_object() { return Object.fromEntries(to_entries(this)); }
 }
 
-export const _else = Symbol("_else");
-const __items = Symbol("__items");
 
+/*
+const __items = Symbol("__items");
 const __not_set = Symbol();
 class Group {
     constructor(discriminator_fn, iter_object) {
@@ -230,6 +248,24 @@ class Group {
     collect_set() { return this.#set_finisher(it => new Set(it)); }
     collect_into(cls) { return this.#set_finisher(it => new cls(it)); }
 }
+*/
+
+function *to_entries(iterable) {
+    for (const value of iterable) {
+        if (Array.isArray(value)) {
+            switch (value.length) {
+                case 0:
+                case 1:
+                default: throw new TypeError("must be of length 2");
+                case 2: yield value;
+            }
+        } else if (is_pojo(value)) {
+            for (const [key, value] of Object.entries(value)) {
+                yield [key, value];
+            }
+        }
+    }
+}
 
 function make_iterator() {
     let done = false;
@@ -247,6 +283,7 @@ function make_iterator() {
     };
 }
 
+/*
 function *__filter(it, fn) {
     while (true) {
         let { done, value } = it.next();
@@ -306,6 +343,7 @@ class MatchGroup {
         return this.finisher(this.#values);
     }
 }
+*/
 
 export function _iter(obj) {
     if (typeof obj === "undefined") {
@@ -347,3 +385,53 @@ function *object_iter(obj) {
     }
 }
 
+
+
+
+
+
+// ===============
+function remove_none(x) { return x !== __none; }
+function remove_needmorevals(x) { return x !== __need_more_values; }
+function filter(fn, value) { return fn(value) ? value : __none; }
+function map(fn, value) { return fn(value); }
+
+function _make_take(n) {
+    if (typeof n !== "number" || n < 0) {
+        throw new TypeError("Iter.take(n): n must be a positive number");
+    }
+    n++;
+
+    return function take(value) {
+        n--;
+        if (n === 1) {
+            return [value, __stop];
+        } else if (n == 0) {
+            return [__stop];
+        } else {
+            return value;
+        }
+    }
+}
+
+function _make_intersperse(interspersed_value) {
+    let first = true;
+    return value => first ? (first = false, value) : [interspersed_value, value];
+}
+
+function _make_pairwise() {
+    let first = true;
+    let x;
+    return (value) => {
+        //console.log(value);
+        if (first) {
+            first = false;
+            x = value;
+            return __need_more_values;
+        } else {
+            const result = [ [x, value] ];
+            x = value;
+            return result;
+        }
+    }
+}

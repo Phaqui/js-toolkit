@@ -25,6 +25,26 @@ t.test("Iter.first()", { autoend: true }, t => {
     });
 });
 
+t.test("Iter.first_or()", { autoend: true }, t => {
+    t.test("takes the first value of the iterator when non-empty", t => {
+        t.strictSame(
+            3,
+            iter([3, 4, 5]).first_or(-1),
+            "3 === iter([3, 4, 5]).first_or(-1)",
+        );
+        t.end();
+    });
+
+    t.test("takes the default value when iterator is empty", t => {
+        t.strictSame(
+            -1,
+            iter([]).first_or(-1),
+            "-1 === iter([]).first_or(-1)",
+        );
+        t.end();
+    });
+});
+
 t.test("standalone first()", { autoend: true }, t => {
     t.test("takes the first value when there's many", t => {
         t.strictSame(
@@ -43,6 +63,7 @@ t.test("standalone first()", { autoend: true }, t => {
         );
         t.end();
     });
+
 
     t.test("throws Empty when iter is empty", { autoend: true }, t => {
         t.throws(() => first([]), new Empty());

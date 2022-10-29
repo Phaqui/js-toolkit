@@ -9,6 +9,8 @@ export class Empty extends Error {
 }
 
 export const _default = Symbol("_default");
+export const __none = Symbol("None");
+export const __need_more_values = Symbol("need more values");
 
 export function _num(obj) {
     if (Array.isArray(obj)) {
