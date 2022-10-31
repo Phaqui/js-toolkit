@@ -8,6 +8,7 @@ import {
 } from "./util.mjs";
 
 import {
+    chain,
     zip,
     _intersperse,
 } from "./producers.mjs";
@@ -37,9 +38,11 @@ export const __stop = Symbol("__stop");
 export function iter(obj) { return new Iter(obj); }
 
 class Iter {
+    #it;
+    #chain = [];
+
     constructor(obj) {
-        this.it = _iter(obj);
-        this.chain = [];
+        this.#it = _iter(obj);
     }
 
     *[Symbol.iterator]() {
@@ -47,11 +50,11 @@ class Iter {
         all_done: while (running) {
             let values = [];
             outer: while (true) {
-                const next = this.it.next();
+                const next = this.#it.next();
                 if (next.done) break all_done;
                 values = values.filter(remove_needmorevals);
                 values.push(next.value);
-                for (const fn of this.chain) {
+                for (const fn of this.#chain) {
                     values = values.map(fn).filter(remove_none).flat();
                     if (values.includes(__stop)) {
                         running = false;
@@ -71,18 +74,17 @@ class Iter {
 
     // processors
     
-    filter(fn) { this.chain.push(filter.bind(null, fn)); return this; }
-    map(fn) { this.chain.push(map.bind(null, fn)); return this; }
+    filter(fn) { this.#chain.push(filter.bind(null, fn)); return this; }
+    map(fn) { this.#chain.push(map.bind(null, fn)); return this; }
     intersperse(value) {
-        this.chain.push(_make_intersperse(value)); return this; }
-    pairwise() { this.chain.push(_make_pairwise()); return this; }
-    take(n) { this.chain.push(_make_take(n)); return this; }
+        this.#chain.push(_make_intersperse(value)); return this; }
+    pairwise() { this.#chain.push(_make_pairwise()); return this; }
+    take(n) { this.#chain.push(_make_take(n)); return this; }
     group(fn) { }
-    takewhile(pred) {}
+    takewhile(pred) { this.#chain.push(_make_takewhile(pred)); return this; }
     takeuntil(pred) {}
-    chain(iterable) {}
+    chain(iterable) { return chain(this, iterable); }
     zip(...iterables) {}
-
 
     // finishers
 
@@ -114,13 +116,12 @@ class Iter {
 
 /*
 const __items = Symbol("__items");
-const __not_set = Symbol();
 class Group {
     constructor(discriminator_fn, iter_object) {
         this.iter_object = iter_object;
         this.discriminator_fn = discriminator_fn;
         this.groups = new Map();
-        this.current_group = __not_set;
+        this.current_group = __none;
     }
 
     *[Symbol.iterator](it) {
@@ -186,19 +187,19 @@ class Group {
     // and resulted in a value, then iterate over
     // the results
     gather() {
-        if (this.current_group === __not_set) {
+        if (this.current_group === __none) {
             throw new Error("No match arms given");
         }
         return this.iter_object;
     }
 
     #get_current_match_group() {
-        if (this.current_group === __not_set) throw Error("not in match arm");
+        if (this.current_group === __none) throw Error("not in match arm");
         return this.groups.get(this.current_group);
     }
 
     #wrap_current_matchgroup_iter(fn, ...args) {
-        if (this.current_group === __not_set) throw Error("not in match arm");
+        if (this.current_group === __none) throw Error("not in match arm");
         const mg = this.groups.get(this.current_group);
         mg.iter = fn(mg.iter, ...args);
         return this;
@@ -206,7 +207,7 @@ class Group {
 
     // Sets the finisher of the current match arm
     #set_finisher(fn) {
-        if (this.current_group === __not_set) throw Error("not in match arm");
+        if (this.current_group === __none) throw Error("not in match arm");
         const mg = this.groups.get(this.current_group);
         mg.finisher = fn;
         return this;
@@ -250,19 +251,22 @@ class Group {
 }
 */
 
+const TO_ENTRIES_ERR = "to_entries(): elements of iterable must be an object, or array of length 2";
 function *to_entries(iterable) {
     for (const value of iterable) {
         if (Array.isArray(value)) {
             switch (value.length) {
                 case 0:
                 case 1:
-                default: throw new TypeError("must be of length 2");
+                default: throw new TypeError(TO_ENTRIES_ERR);
                 case 2: yield value;
             }
         } else if (is_pojo(value)) {
             for (const [key, value] of Object.entries(value)) {
                 yield [key, value];
             }
+        } else {
+            throw new TypeError(TO_ENTRIES_ERR);
         }
     }
 }
@@ -395,6 +399,16 @@ function remove_none(x) { return x !== __none; }
 function remove_needmorevals(x) { return x !== __need_more_values; }
 function filter(fn, value) { return fn(value) ? value : __none; }
 function map(fn, value) { return fn(value); }
+
+function _make_takewhile(predicate) {
+    return function takewhile(value) {
+        if (predicate(value)) {
+            return value;
+        } else {
+            return [__stop];
+        }
+    }
+}
 
 function _make_take(n) {
     if (typeof n !== "number" || n < 0) {
