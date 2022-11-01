@@ -1,6 +1,12 @@
 export const truthy = x => !!x;
 export const falsy = x => !x;
 
+export function type(obj) {
+    if (obj === null) return "null";
+    if (obj === undefined) return "undefined";
+    return obj.constructor.name;
+}
+
 export class Empty extends Error {
     constructor(...params) {
         super(...params);

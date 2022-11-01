@@ -16,10 +16,5 @@ export {
     join,
 } from "./finishers.mjs";
 
-export { Empty } from "./util.mjs";
+export { Empty, type } from "./util.mjs";
 
-export { SaneSet } from "./sane_set.mjs";
-
-export { shuffle, patch_array_shuffle } from "./array.mjs";
-
-export { type } from "./type.mjs";

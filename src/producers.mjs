@@ -1,4 +1,5 @@
 import { iter, _iter } from "./iter.mjs";
+import { _sieve_of_eratosthenes } from "./eratosthenes.mjs";
 
 export const count = (start = 0, step = 1) => iter(_count(start, step));
 export const range = (...args) => iter(_range(...args));
@@ -98,33 +99,4 @@ export function *_intersperse(obj, value) {
         yield a.value;
     }
 }
-
-
-
-// Sieve of Eratosthenes
-// Code by David Eppstein, UC Irvine, 28 Feb 2002
-// http://code.activestate.com/recipes/117119/
-// transliterated to js
-function *_sieve_of_eratosthenes() {
-    const D = new Map();
-    let q = 2;
-    while (true) {
-        if (!D.has(q)) {
-            yield q;
-            D.set(q * q, [q])
-        } else {
-            for (let p of D.get(q)) {
-                let t = p + q;
-                if (D.has(t)) {
-                    D.get(t).push(p);
-                } else {
-                    D.set(t, [p]);
-                }
-            }
-            D.delete(q);
-        }
-        q += 1;
-    }
-}
-
 

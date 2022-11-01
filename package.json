@@ -1,14 +1,39 @@
 {
   "name": "js-toolkit",
   "version": "0.0.1",
-  "description": "",
+  "description": "My own collection of useful javascript things",
   "main": "src/index.mjs",
   "scripts": {
-    "test": "tap"
+    "test": "tap -Rspec"
+  },
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/Phaqui/js-toolkit"
+  },
+  "bugs": {
+      "url": "https://github.com/Phaqui/js-toolkit/issues"
+  },
+  "exports": {
+      ".": {
+          "node": {
+              "import": "./src/index.mjs"
+          }
+      },
+      "./array": {
+          "node": {
+              "import": "./src/array.mjs"
+          }
+      },
+      "./SaneSet": {
+          "node": {
+              "import": "./src/sane_set.mjs"
+          }
+      }
   },
   "keywords": [],
   "author": "Phaqui <phaqui@gmail.com>",
   "license": "ISC",
+  "private": true,
   "devDependencies": {
     "tap": "^16.3.0"
   }
