@@ -20,7 +20,7 @@ export function all(obj, pred = truthy) {
 export function count(obj) {
     if (Array.isArray(obj)) return obj.length;
     if (obj instanceof Set) return obj.size;
-    const n = 0, it = _iter(obj);
+    let n = 0, it = _iter(obj);
     for (const _ of it) n++;
     return n;
 }

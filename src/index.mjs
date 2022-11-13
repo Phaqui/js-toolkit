@@ -4,6 +4,7 @@ export {
     count,
     fibonacci,
     primes,
+    permutations,
     range,
     repeat,
     zip

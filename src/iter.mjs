@@ -15,6 +15,7 @@ import {
 
 import {
     all,
+    any,
     average,
     average_or,
     first,
@@ -22,6 +23,7 @@ import {
     last,
     last_or,
     join,
+    count,
     //reduce,
     sum,
     sum_or
@@ -94,6 +96,7 @@ class Iter {
     avg() { return average(this); }
     average_or(value) { return average_or(this, value); }
     avg_or(value) { return average_or(this, value); }
+    count() { return count(this); }
     join(str) { return join(this, str); }
     sum() { return sum(this); }
     sum_or(value) { return sum_or(this, value); }

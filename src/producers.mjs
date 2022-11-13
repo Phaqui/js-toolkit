@@ -7,6 +7,7 @@ export const fibonacci = () => iter(_fibonacci());
 export const enumerate = (obj) => iter(_enumerate(obj));
 export const repeat = (val, n = null) => iter(_repeat(val, n));
 export const chain = (...iters) => iter(_chain(...iters));
+export const permutations = (arr) => iter(_permutations(arr));
 export const primes = () => iter(_primes());
 export const intersperse = (obj, val) => iter(_intersperse(obj, val));
 export const zip = (...iters) => iter(_zip(...iters));
@@ -97,6 +98,53 @@ export function *_intersperse(obj, value) {
         if (a.done) break;
         yield value;
         yield a.value;
+    }
+}
+
+export function *_product(iterables, repeat = 1) {
+    // iterables is an array (or iterable) of iterables (or arrays)
+    // iterables = [a, b, c, ...]
+    const array = [...iterables];
+    const lengths = array.map(arr => arr.length - 1);
+    for (const indexes of odometer(...lengths)) {
+        yield [...zip(array, indexes).map(([arr, i]) => arr[i])];
+    }
+}
+
+function *odometer(...limits) {
+    // limits = [5, 4, 5]
+    // [0, 0, 0], [0, 0, 1], [0, 0, 2], ... [0, 0, 5],
+    // [0, 1, 0], [0, 1, 1], ...
+    const n = limits.length;
+    let i = n - 1;
+    const res = [...repeat(0, n)];
+    yield res;
+    outer: while (true) {
+        let i = n - 1;
+        while (true) {
+            res[i]++;
+            if (res[i] <= limits[i]) {
+                break;
+            } else {
+                res[i--] = 0;
+                if (i < 0) break outer;
+            }
+        }
+        // must copy here, if not, the same array reference is returned
+        // over and over
+        yield [...res];
+    }
+}
+
+export function *_permutations(arr) {
+    const n = arr.length;
+    const repeated = [];
+    for (let i = 0; i < n; i++) repeated.push([...arr]);
+    for (const x of _product(repeated)) {
+        const s = new Set(x);
+        if (s.size === arr.length) {
+            yield [...x];
+        }
     }
 }
 
