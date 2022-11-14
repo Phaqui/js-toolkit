@@ -1,13 +1,12 @@
-// https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array
+import { fisher_yates } from "./fisher_yates.mjs";
+import { sattolo_cycle } from "./sattolo_cycle.mjs";
+
 export function shuffle(array) {
-    let j, x, i;
-    for (i = array.length - 1; i > 0; i--) {
-        j = Math.floor(Math.random() * (i + 1));
-        x = array[i];
-        array[i] = array[j];
-        array[j] = x;
-    }
-    return array;
+    return fisher_yates(array);
+}
+
+export function sattolo_shuffle(array) {
+    return sattolo_cycle(array);
 }
 
 export function patch_array_shuffle() {
