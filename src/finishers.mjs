@@ -47,10 +47,22 @@ export function last(obj) {
     return _last(_iter(obj));
 }
 
+export function min(obj) {
+    if (Array.isArray(obj)) {
+        if (obj.length === 0) throw new Empty();
+        // slow? max number of elements?
+        // what happens to non-number (or NaN) elements?
+        return Math.min(...obj);
+    }
+
+    return _min(obj);
+}
+
 export const first_or = (obj, value) => _catch_empty(_first, value, obj);
 export const last_or = (obj, value) => _catch_empty(_last, value, obj);
 export const average_or = (obj, value) => _catch_empty(average, value, obj);
 export const sum_or = (obj, value) => _catch_empty(sum, value, obj);
+export const min_or = (obj, value) => _catch_empty(min, value, obj);
 export const reduce_or = (obj, value, fn, initial_value = __none) =>
     _catch_empty(reduce, value, obj, fn, initial_value);
 
@@ -129,5 +141,18 @@ export function sum(obj) {
     }
     if (n === 0) throw new Empty();
     return result;
+}
+
+export function _min(obj) {
+    let it = _iter(obj);
+    let first = it.next();
+    if (first.done) throw new Empty();
+    let winner = first.value;
+    for (let current of it) {
+        if (current < winner) {
+            winner = current;
+        }
+    }
+    return winner;
 }
 

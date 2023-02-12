@@ -1,3 +1,5 @@
+import { is_iterable } from "./util.mjs";
+
 export function filter(obj, fn) {
     // hmm
 }
@@ -44,5 +46,17 @@ export function *_skip(iterable, n = 1) {
     while (n--) iterable.next();
     for (const val of iterable) {
         yield val;
+    }
+}
+
+export function *_recurse_into(obj) {
+    if (!is_iterable(obj)) {
+        yield obj;
+    } else {
+        for (const elem of obj) {
+            for (let inner of _recurse_into(elem)) {
+                yield inner;
+            }
+        }
     }
 }

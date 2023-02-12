@@ -94,7 +94,7 @@ filter, map, take, takewhile, takeuntil, skip, group
 
 ## Finishers (consumes an iterator to produce a single result
 
-any, all, count, join, first, last, reduce, average, sum
+any, all, count, join, first, last, reduce, average, sum, max, min
 
 ## Collectors
 

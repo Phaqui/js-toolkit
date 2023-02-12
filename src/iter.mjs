@@ -32,7 +32,8 @@ import {
 import {
     _map,
     _take,
-    _filter
+    _filter,
+    _recurse_into,
 } from "./processors.mjs";
 
 export const _else = Symbol("_else");
@@ -80,6 +81,12 @@ class Iter {
     map(fn) { this.#chain.push(map.bind(null, fn)); return this; }
     intersperse(value) {
         this.#chain.push(_make_intersperse(value)); return this; }
+
+    recurse_into() {
+        this.#chain.push(recurse_into.bind(null));
+        return this;
+    }
+
     pairwise() { this.#chain.push(_make_pairwise()); return this; }
     take(n) { this.#chain.push(_make_take(n)); return this; }
     group(fn) { }
@@ -115,7 +122,6 @@ class Iter {
     collect_map() { return new Map(to_entries(this)); }
     collect_object() { return Object.fromEntries(to_entries(this)); }
 }
-
 
 /*
 const __items = Symbol("__items");
@@ -402,6 +408,7 @@ function remove_none(x) { return x !== __none; }
 function remove_needmorevals(x) { return x !== __need_more_values; }
 function filter(fn, value) { return fn(value) ? value : __none; }
 function map(fn, value) { return fn(value); }
+function recurse_into(item) { return [..._recurse_into(item)]; }
 
 function _make_takewhile(predicate) {
     return function takewhile(value) {

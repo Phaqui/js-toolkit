@@ -7,6 +7,11 @@ export function type(obj) {
     return obj.constructor.name;
 }
 
+export function is_iterable(obj) {
+    if (obj === undefined || obj === undefined) return false;
+    return typeof obj[Symbol.iterator] === "function";
+}
+
 export class Empty extends Error {
     constructor(...params) {
         super(...params);

@@ -148,3 +148,20 @@ export function *_permutations(arr) {
     }
 }
 
+// TODO
+export function *split(s, by, { keep_splits = false } = {}) {
+    // split("a,b,c", ",") => a b c
+    // split([1, 2, 3, 0, 5, 3, 0, 9], 0) => [1, 2, 3] [5 3] [9]
+    //
+    // if s can be any iterable, then.. need to keep the elements we loop over
+    let next_result;
+    for (const x of s) {
+        if (x === by) {
+            yield next_result;
+            next_result = null;
+            if (keep_splits) yield x;
+        } else {
+            next_result += x;
+        }
+    }
+}
