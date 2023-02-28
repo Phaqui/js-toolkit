@@ -61,6 +61,7 @@ export function min(obj) {
 export const first_or = (obj, value) => _catch_empty(_first, value, obj);
 export const last_or = (obj, value) => _catch_empty(_last, value, obj);
 export const average_or = (obj, value) => _catch_empty(average, value, obj);
+export const median_or = (obj, value) => _catch_empty(median, value, obj);
 export const sum_or = (obj, value) => _catch_empty(sum, value, obj);
 export const min_or = (obj, value) => _catch_empty(min, value, obj);
 export const reduce_or = (obj, value, fn, initial_value = __none) =>
@@ -129,6 +130,23 @@ export function average(obj) {
     }
     if (n === 0) throw new Empty();
     return sum / n;
+}
+
+const sort_numerically = (a, b) => a - b;
+export function median(obj, { sort_func = sort_numerically } = {}) {
+    const items = [..._iter(obj)].sort(sort_numerically);
+    const len = items.length;
+
+    if (len === 0) throw new Empty();
+
+    if (len % 2 === 1) {
+        const middle = (len - 1) / 2;
+        return items[middle];
+    } else {
+        const middle_1 = len / 2 - 1;
+        const middle_2 = len / 2;
+        return (items[middle_1] + items[middle_2]) / 2;
+    }
 }
 
 export function sum(obj) {

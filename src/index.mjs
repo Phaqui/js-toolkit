@@ -17,6 +17,8 @@ export {
     last,
     sum,
     join,
+    median,
+    median_or,
 } from "./finishers.mjs";
 
 export { Empty, type } from "./util.mjs";

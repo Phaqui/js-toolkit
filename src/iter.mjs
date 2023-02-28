@@ -18,6 +18,8 @@ import {
     any,
     average,
     average_or,
+    median,
+    median_or,
     first,
     first_or,
     last,
@@ -103,6 +105,8 @@ class Iter {
     avg() { return average(this); }
     average_or(value) { return average_or(this, value); }
     avg_or(value) { return average_or(this, value); }
+    median() { return median(this); }
+    median_or(value) { return median_or(this, value); }
     count() { return count(this); }
     join(str) { return join(this, str); }
     sum() { return sum(this); }
